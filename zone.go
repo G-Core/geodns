@@ -213,7 +213,7 @@ func (z *Zone) findLabels(s string, targets []string, qts qTypes) (*Label, uint1
 					name = target
 				}
 			}
-			if glob.Glob(z.GlobLabels[n].Label, name) {
+			if _, ok := z.Labels[s]; !ok && glob.Glob(z.GlobLabels[n].Label, name) {
 				for _, qtype := range qts {
 					switch qtype {
 					case dns.TypeANY:
