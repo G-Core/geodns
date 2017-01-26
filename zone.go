@@ -244,6 +244,12 @@ func (z *Zone) findLabels(s string, targets []string, qts qTypes) (*Label, uint1
 
 		}
 	} // glob
+	if found {
+		// we need to return NOERROR if there is at least one label
+		// otherwise geodns will return NXDOMAIN, which will be cached by other dns servers
+		// so they will return nothing for any consequent query
+		return new(Label), 0
+	}
 
 	return z.Labels[s], 0
 }
