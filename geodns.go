@@ -197,12 +197,14 @@ func main() {
 
 	inter := getInterfaces()
 
-	go statHatPoster()
-
 	Zones := make(Zones)
 
 	go monitor(Zones)
-	go Zones.statHatPoster()
+
+	if Config.HasStatHat() {
+		go statHatPoster()
+		go Zones.statHatPoster()
+	}
 
 	srv.setupRootZone()
 	srv.setupPgeodnsZone(Zones)
