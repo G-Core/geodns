@@ -19,6 +19,8 @@ const (
 )
 
 var cidr48Mask net.IPMask
+var geoipv4 = new(GeoIPV4)
+var geoipv6 = new(GeoIPV6)
 
 func init() {
 	cidr48Mask = net.CIDRMask(48, 128)
@@ -26,20 +28,31 @@ func init() {
 
 func (t TargetOptions) GetTargets(ip net.IP) ([]string, int) {
 
+	var gip GeoIP
+
+	switch ip.To4() {
+	case nil:
+		// ipv6
+		gip = geoipv6
+	default:
+		// ipv4
+		gip = geoipv4
+	}
+
 	targets := make([]string, 0)
 
 	var country, continent, region, regionGroup, asn string
 	var netmask int
 
 	if t&TargetASN > 0 {
-		asn, netmask = geoIP.GetASN(ip)
+		asn, netmask = gip.GetASN(ip)
 	}
 
 	if t&TargetRegion > 0 || t&TargetRegionGroup > 0 {
-		country, continent, regionGroup, region, netmask = geoIP.GetCountryRegion(ip)
+		country, continent, regionGroup, region, netmask = gip.GetCountryRegion(ip)
 
 	} else if t&TargetCountry > 0 || t&TargetContinent > 0 {
-		country, continent, netmask = geoIP.GetCountry(ip)
+		country, continent, netmask = gip.GetCountry(ip)
 	}
 
 	if t&TargetIP > 0 {
@@ -80,6 +93,7 @@ func (t TargetOptions) GetTargets(ip net.IP) ([]string, int) {
 	if t&TargetGlobal > 0 {
 		targets = append(targets, "@")
 	}
+
 	return targets, netmask
 }
 

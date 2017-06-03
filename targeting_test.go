@@ -36,6 +36,8 @@ func (s *TargetingSuite) TestTargetParse(c *C) {
 func (s *TargetingSuite) TestGetTargets(c *C) {
 	ip := net.ParseIP("207.171.1.1")
 
+	geoIP := new(GeoIPV4)
+
 	geoIP.setupGeoIPCity()
 	geoIP.setupGeoIPCountry()
 	geoIP.setupGeoIPASN()

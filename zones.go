@@ -239,12 +239,15 @@ func readZoneFile(zoneName, fileName string) (zone *Zone, zerr error) {
 
 	switch {
 	case zone.Options.Targeting >= TargetRegionGroup:
-		geoIP.setupGeoIPCity()
+		geoipv4.setupGeoIPCity()
+		geoipv6.setupGeoIPCity()
 	case zone.Options.Targeting >= TargetContinent:
-		geoIP.setupGeoIPCountry()
+		geoipv4.setupGeoIPCountry()
+		geoipv6.setupGeoIPCountry()
 	}
 	if zone.Options.Targeting&TargetASN > 0 {
-		geoIP.setupGeoIPASN()
+		geoipv4.setupGeoIPASN()
+		geoipv6.setupGeoIPASN()
 	}
 
 	return zone, nil

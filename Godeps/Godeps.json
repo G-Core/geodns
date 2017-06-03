@@ -1,19 +1,19 @@
 {
 	"ImportPath": "github.com/abh/geodns",
 	"GoVersion": "go1.7",
-	"GodepVersion": "v74",
+	"GodepVersion": "v79",
 	"Deps": [
 		{
 			"ImportPath": "github.com/abh/errorutil",
 			"Rev": "f9bd360d00b902548fbb80837aef90dca2c8285e"
 		},
 		{
-			"ImportPath": "github.com/abh/geoip",
-			"Rev": "e5f8ea00f476d60a1e539d74211ce24881347d9e"
-		},
-		{
 			"ImportPath": "github.com/miekg/dns",
 			"Rev": "b9171237b0642de1d8e8004f16869970e065f46b"
+		},
+		{
+			"ImportPath": "github.com/gofort/geoip",
+			"Rev": "dd8220ee374b1a5f37f30ac4db5ed99d452ce63f"
 		},
 		{
 			"ImportPath": "github.com/pborman/uuid",
