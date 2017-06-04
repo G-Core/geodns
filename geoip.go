@@ -63,6 +63,8 @@ func (g *GeoIPV4) GetCountryRegion(ip net.IP) (country, continent, regionGroup, 
 		country = strings.ToLower(country)
 		continent = countries.CountryContinent[country]
 
+		ConvertUSMilitaryCodes(&country, &region, &continent)
+
 		if len(region) > 0 {
 			region = country + "-" + strings.ToLower(region)
 			regionGroup = countries.CountryRegionGroup(country, region)
@@ -182,6 +184,8 @@ func (g *GeoIPV6) GetCountryRegion(ip net.IP) (country, continent, regionGroup, 
 		country = strings.ToLower(country)
 		continent = countries.CountryContinent[country]
 
+		ConvertUSMilitaryCodes(&country, &region, &continent)
+
 		if len(region) > 0 {
 			region = country + "-" + strings.ToLower(region)
 			regionGroup = countries.CountryRegionGroup(country, region)
@@ -256,5 +260,40 @@ func (g *GeoIPV6) setupGeoIPASN() {
 		return
 	}
 	g.asn = gi
+
+}
+
+func ConvertUSMilitaryCodes(country, region, continent *string) {
+
+	if country == nil {
+		empty := ""
+		country = &empty
+	}
+
+	if region == nil {
+		empty := ""
+		region = &empty
+	}
+
+	if continent == nil {
+		empty := ""
+		continent = &empty
+	}
+
+	if *country == "us" {
+		switch *region {
+		case "AE":
+			*country = "FR"
+			*continent = "europe"
+			*region = ""
+		case "AA":
+			*continent = "north-america"
+			*region = ""
+		case "AP":
+			*continent = "south-america"
+			*country = "PE"
+			*region = ""
+		}
+	}
 
 }
