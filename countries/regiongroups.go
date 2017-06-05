@@ -60,6 +60,7 @@ var RegionGroups = map[string]string{
 	"us-wv": "us-east",
 
 	// https://en.wikipedia.org/wiki/Federal_districts_of_Russia
+	"ru-00": "ru-cfd",
 	"ru-09": "ru-cfd",
 	"ru-10": "ru-cfd",
 	"ru-83": "ru-cfd",
