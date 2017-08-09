@@ -138,7 +138,7 @@ func (srv *Server) serve(w dns.ResponseWriter, req *dns.Msg, z *Zone) {
 		}
 	}
 
-	labels, labelQtype := z.findLabels(label, targets, qTypes{dns.TypeMF, dns.TypeCNAME, qtype})
+	labels, labelQtype := z.findLabels(label, targets, qTypes{dns.TypeMF, dns.TypeCNAME, qtype}, nil)
 	if labelQtype == 0 {
 		labelQtype = qtype
 	}

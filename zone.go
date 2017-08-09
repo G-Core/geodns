@@ -43,6 +43,8 @@ type Label struct {
 	Ttl      int
 	Records  map[uint16]Records
 	Weight   map[uint16]int
+
+	CheckROP bool
 }
 
 type labels map[string]*Label
@@ -155,11 +157,43 @@ func (z *Zone) SoaRR() dns.RR {
 	return z.Labels[""].firstRR(dns.TypeSOA)
 }
 
+func hasAlias(label *Label) bool {
+	return label.Records[dns.TypeMF] != nil
+}
+
+func getAlias(label *Label) string {
+	return label.firstRR(dns.TypeMF).(*dns.MF).Mf
+}
+
+type ROPClient struct {
+	Key   string
+	Value string
+}
+
 // Find label "s" in country "cc" falling back to the appropriate
 // continent and the global label name as needed. Looks for the
 // first available qType at each targeting level. Return a Label
 // and the qtype that was "found"
-func (z *Zone) findLabels(s string, targets []string, qts qTypes) (*Label, uint16) {
+func (z *Zone) findLabels(s string, targets []string, qts qTypes, rc *ROPClient) (*Label, uint16) {
+	followAlias := func(label *Label, rc *ROPClient) (*Label, uint16) {
+		disabledROP := false
+
+		name := getAlias(label)
+		if strings.HasPrefix(name, "rop-") {
+			ropName := name[len("rop-"):]
+
+			// :TODO!!!:
+			disabledROP = ropName == "sv4-5" && rc != nil && rc.Key == "client" && rc.Value == "155"
+		}
+
+		// TODO: need to avoid loops here somehow
+		if disabledROP {
+			// we need to go to "" but without geo or we have a loop => with ["@"] only
+			return z.findLabels("", []string{"@"}, qts, nil)
+		}
+		return z.findLabels(name, targets, qts, rc)
+	}
+
 	for _, target := range targets {
 		var name string
 
@@ -175,7 +209,6 @@ func (z *Zone) findLabels(s string, targets []string, qts qTypes) (*Label, uint1
 		}
 
 		if label, ok := z.Labels[name]; ok {
-			var name string
 			for _, qtype := range qts {
 				switch qtype {
 				case dns.TypeANY:
@@ -184,10 +217,8 @@ func (z *Zone) findLabels(s string, targets []string, qts qTypes) (*Label, uint1
 					// pick types not already picked
 					return z.Labels[s], qtype
 				case dns.TypeMF:
-					if label.Records[dns.TypeMF] != nil {
-						name = label.firstRR(dns.TypeMF).(*dns.MF).Mf
-						// TODO: need to avoid loops here somehow
-						return z.findLabels(name, targets, qts)
+					if hasAlias(label) {
+						return followAlias(label, rc)
 					}
 				default:
 					// return the label if it has the right record
@@ -217,7 +248,8 @@ func (z *Zone) findLabels(s string, targets []string, qts qTypes) (*Label, uint1
 					name = target
 				}
 			}
-			if _, ok := z.Labels[s]; !ok && glob.Glob(z.GlobLabels[n].Label, name) {
+
+			if _, ok := z.Labels[s]; !ok && glob.Glob(label.Label, name) {
 				found = true
 				for _, qtype := range qts {
 					switch qtype {
@@ -227,10 +259,23 @@ func (z *Zone) findLabels(s string, targets []string, qts qTypes) (*Label, uint1
 						// pick types not already picked
 						return z.GlobLabels[n], qtype
 					case dns.TypeMF:
-						if label.Records[dns.TypeMF] != nil {
-							name = label.firstRR(dns.TypeMF).(*dns.MF).Mf
-							// TODO: need to avoid loops here somehow
-							return z.findLabels(name, targets, qts)
+						if hasAlias(label) {
+							if label.CheckROP {
+								idx := strings.Index(label.Label, "*")
+								if idx != -1 {
+									key := label.Label[:idx]
+
+									if idx < len(s) {
+										val := s[idx:]
+
+										rc = &ROPClient{
+											Key: key,
+											Value: val,
+										}
+									}
+								}
+							}
+							return followAlias(label, rc)
 						}
 					default:
 						// return the label if it has the right record

@@ -286,7 +286,11 @@ func setupZoneData(data map[string]interface{}, Zone *Zone) {
 
 			dnsType, ok := recordTypes[rType]
 			if !ok {
-				log.Printf("Unsupported record type '%s'\n", rType)
+				if rType == "check-rop" {
+					label.CheckROP = true
+				} else {
+					log.Printf("Unsupported record type '%s'\n", rType)
+				}
 				continue
 			}
 
