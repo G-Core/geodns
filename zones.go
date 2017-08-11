@@ -18,6 +18,7 @@ import (
 
 	"github.com/abh/errorutil"
 	"github.com/miekg/dns"
+	"github.com/garyburd/redigo/redis"
 )
 
 // Zones maps domain names to zone data
@@ -141,6 +142,16 @@ func (srv *Server) setupRootZone() {
 	})
 }
 
+func NewPool(addr string) *redis.Pool {
+	return &redis.Pool{
+		// max idle connections in the pool - if more then close
+		MaxIdle: 3,
+		// close connection after this time not using
+		IdleTimeout: 240 * time.Second,
+		Dial: func () (redis.Conn, error) { return redis.Dial("tcp", addr) },
+	}
+}
+
 func readZoneFile(zoneName, fileName string) (zone *Zone, zerr error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -225,6 +236,9 @@ func readZoneFile(zoneName, fileName string) (zone *Zone, zerr error) {
 				// log.Printf("logging options: %#v", logging)
 			}
 			continue
+
+		case "rop_limit_database":
+			zone.ROPPool = NewPool(v.(string))
 
 		case "data":
 			data = v.(map[string]interface{})

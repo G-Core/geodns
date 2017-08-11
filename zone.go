@@ -8,6 +8,8 @@ import (
 	"github.com/miekg/dns"
 	"github.com/rcrowley/go-metrics"
 	glob "github.com/ryanuber/go-glob"
+	"github.com/garyburd/redigo/redis"
+	"log"
 )
 
 type ZoneOptions struct {
@@ -74,6 +76,8 @@ type Zone struct {
 	Metrics    ZoneMetrics
 
 	sync.RWMutex
+
+	ROPPool *redis.Pool
 }
 
 type qTypes []uint16
@@ -165,31 +169,56 @@ func getAlias(label *Label) string {
 	return label.firstRR(dns.TypeMF).(*dns.MF).Mf
 }
 
-type ROPClient struct {
-	Key   string
-	Value string
-}
-
 // Find label "s" in country "cc" falling back to the appropriate
 // continent and the global label name as needed. Looks for the
 // first available qType at each targeting level. Return a Label
 // and the qtype that was "found"
 func (z *Zone) findLabels(s string, targets []string, qts qTypes, rc *ROPClient) (*Label, uint16) {
 	followAlias := func(label *Label, rc *ROPClient) (*Label, uint16) {
+		name := getAlias(label)
 		disabledROP := false
 
-		name := getAlias(label)
-		if strings.HasPrefix(name, "rop-") {
-			ropName := name[len("rop-"):]
+		if rc != nil && z.ROPPool != nil {
+			if strings.HasPrefix(name, "rop-") {
+				ropName := name[len("rop-"):]
 
-			// :TODO!!!:
-			disabledROP = ropName == "sv4-5" && rc != nil && rc.Key == "client" && rc.Value == "155"
+				//disabledROP = ropName == "sv4-5" && rc.Key == "client" && rc.Value == "155"
+
+				conn := z.ROPPool.Get()
+				defer conn.Close()
+
+				if IsValidConn(conn) {
+					var rl ROPList
+					exists := false
+					func() {
+						defer func() {
+							if err := recover(); err != nil {
+								log.Printf("GetROPList FAIL: %s", err)
+							}
+						}()
+
+						exists = GetROPList(conn, &rl, *rc)
+					}()
+
+					if exists {
+						found := false
+						for _, s := range rl.List {
+							if s == ropName {
+								found = true
+								break
+							}
+						}
+
+						disabledROP = found == rl.IsOut
+					}
+				}
+			}
 		}
 
 		// TODO: need to avoid loops here somehow
 		if disabledROP {
-			// we need to go to "" but without geo or we have a loop => with ["@"] only
-			return z.findLabels("", []string{"@"}, qts, nil)
+			// we need to go to "" (FallbackLabel) but without geo or we have a loop => with ["@"] only
+			return z.findLabels(rc.FallbackLabel, []string{"@"}, qts, nil)
 		}
 		return z.findLabels(name, targets, qts, rc)
 	}
@@ -271,6 +300,7 @@ func (z *Zone) findLabels(s string, targets []string, qts qTypes, rc *ROPClient)
 										rc = &ROPClient{
 											Key: key,
 											Value: val,
+											FallbackLabel: getAlias(label),
 										}
 									}
 								}
