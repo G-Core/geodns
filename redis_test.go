@@ -4,26 +4,32 @@ import (
 	"testing"
 	"encoding/json"
 	"fmt"
+	"github.com/garyburd/redigo/redis"
 )
 
 func TestRedis(t *testing.T) {
+	var conn redis.Conn
+	//testRedis := true
+	testRedis := false
 
-	pool := NewPool(":6379")
+	if testRedis {
+		pool := NewPool(":6379")
 
-	conn := pool.Get()
-	defer conn.Close()
+		conn = pool.Get()
+		defer conn.Close()
 
-	validConn := IsValidConn(conn)
-	_ = validConn
+		validConn := IsValidConn(conn)
+		Assert(validConn)
+	}
 
-	if true && validConn {
+	if true && testRedis {
 		res := RedisHGET(conn, "client", "155")
 
 		fmt.Println(string(res))
 		_ = res
 	}
 
-	if true && validConn {
+	if true && testRedis {
 		// BSON vs JSON vs ReJSON vs MSGPACK ...:
 		// - JSON is most comfortable to deal with
 		// - JSON speed is not so slow, maximum 3.5 than gob,
@@ -53,7 +59,7 @@ func TestRedis(t *testing.T) {
 		Assert(rl.List[0] == "sv4-5")
 	}
 
-	if true && validConn {
+	if true && testRedis {
 		dat := RedisHGET(conn, "client", "non-existent")
 		Assert(dat == nil)
 	}
