@@ -8,12 +8,22 @@
 			"Rev": "f9bd360d00b902548fbb80837aef90dca2c8285e"
 		},
 		{
-			"ImportPath": "github.com/miekg/dns",
-			"Rev": "b9171237b0642de1d8e8004f16869970e065f46b"
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Comment": "v1.1.0-8-g9e66b83",
+			"Rev": "9e66b83d15a259978be267d0b61838c42c3904e3"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Comment": "v1.1.0-8-g9e66b83",
+			"Rev": "9e66b83d15a259978be267d0b61838c42c3904e3"
 		},
 		{
 			"ImportPath": "github.com/gofort/geoip",
 			"Rev": "dd8220ee374b1a5f37f30ac4db5ed99d452ce63f"
+		},
+		{
+			"ImportPath": "github.com/miekg/dns",
+			"Rev": "b9171237b0642de1d8e8004f16869970e065f46b"
 		},
 		{
 			"ImportPath": "github.com/pborman/uuid",
@@ -22,6 +32,11 @@
 		{
 			"ImportPath": "github.com/rcrowley/go-metrics",
 			"Rev": "eeba7bd0dd01ace6e690fa833b3f22aaec29af43"
+		},
+		{
+			"ImportPath": "github.com/ryanuber/go-glob",
+			"Comment": "v0.1",
+			"Rev": "572520ed46dbddaed19ea3d9541bdd0494163693"
 		},
 		{
 			"ImportPath": "github.com/stathat/go",
